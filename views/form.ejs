@@ -1,0 +1,192 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <meta http-equiv="X-UA-Compatible" content="ie=edge">
+    <title>Home</title>
+    <script src="https://cdn.jsdelivr.net/npm/vue@2.6.11"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/axios/0.19.2/axios.js" integrity="sha256-bd8XIKzrtyJ1O5Sh3Xp3GiuMIzWC42ZekvrMMD4GxRg=" crossorigin="anonymous"></script>
+</head>
+<body>
+    <style>
+        body{
+            background-color: #fcfefe;
+            margin: 0px;
+            padding: 0px;
+            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Oxygen, Ubuntu, Cantarell, 'Open Sans', 'Helvetica Neue', sans-serif;
+        }
+        #app{
+            height: 100vh;
+        }
+        input,textarea{
+            border: none;
+            width: 80%;
+            padding: 0;
+            margin:auto;
+            margin-top: 0;
+            padding: 5px;
+            padding-top: 0;
+            background-color: transparent;
+            border-bottom: 2px solid rgba(41, 178, 153, 0.575);
+        }
+        input:focus,textarea:focus{
+            outline: none;
+        }
+        #required{
+            font-size: 15px;
+        }
+        
+        .element{
+            width: 70%;
+            margin: auto;
+        }
+        .heading{ 
+            text-align: left;
+            width: 80%;      
+            margin: auto;
+            margin-top: 10px;
+            font-size: 13px;
+        }
+        
+        #previewForm{
+            min-height: 65vh;
+        }
+        select,button{
+            color: rgba(255, 255, 255, 0.808);
+            font-size: 20;
+            font-weight: 800;
+            background-image: linear-gradient(30deg,rgba(7, 131, 131, 0.534),rgb(30, 168, 161),rgba(10, 117, 150, 0.842));
+            padding: 10px;
+            border-radius: 16px;
+            border: 0;
+            margin: 6px;
+            box-shadow: 2px 2px 6px rgba(1, 75, 59, 0.288);
+        }
+        select:focus,button:focus,button:hover{
+            outline: none;
+            box-shadow: 3px 3px 6px rgba(1, 75, 59, 0.541);
+
+        }
+        .mcqOptions{
+            color: rgba(0, 0, 0, 0.856);
+            font-size: 14px;
+            margin: 10px;
+        }
+        .mcqOptions input{
+            width: 5vw;
+        }
+        .mcq{
+            text-align: left;
+            padding:5px 6vw;
+        }
+    </style>
+    <div id="app" style="text-align: center;">
+        <div v-if="respSaved" style="z-index: 1; position: absolute; top: 0px;left: 0px; width: 100vw;height: 130vh; background-color: beige;"> <h5>Response Saved</h5></div>
+
+        <div id="previewForm">
+            <h1 >{{inputs.form.formName}}</h1>
+            <p v-if="error">{{errorMsg}}</p>
+                    
+                <div v-for="(input,index) in inputs.form.inputs" :key="index" class="element">
+                    <p class="heading">{{input.heading}}
+                        <span v-if="input.required" style="color: red;" id="required">&nbsp*</span>
+                    </p>
+                    <input class="textInput" :type="input.inputType" v-if="input.inputType!='textarea'&& input.inputType!='radio'">
+                    <textarea class="textArea" v-if="input.inputType=='textarea'" name="" id="" cols="30" rows="2"></textarea>
+                    <div class="mcq">
+                        <div v-for="options in input.mcq" class="mcqOptions">
+                            <input type="radio" :name="input.heading" :value='options'>{{options}}
+                        </div>
+                    </div>
+                </div>
+                <button @click="saveResp">Save your response</button>
+        </div>
+        
+        
+    </div>
+    <footer style="text-align: center; margin-top: 50px;margin-bottom:0px; padding:30px ; background-color: rgba(46, 172, 149, 0.404); font-size: 12px;">
+            <a href="https://myfrm.herokuapp.com/" target="_blank" style="text-decoration: none;color: rgba(0, 115, 182, 0.849);">My Form</a><br><br>
+            <a href="https://www.instagram.com/_d.cod/" target="_blank" style="text-decoration: none;color: rgba(0, 115, 182, 0.849);">With ❤️ Abhinav</a>
+    </footer>
+    <script>
+        const app= new Vue({
+            el:"#app",
+            data:{
+                inputs:JSON.parse('<%- data %>'),
+                error:false,
+                respSaved:false,
+                respError:false,
+                errorMsg:"Fill all required fields"
+            },
+            methods:{
+                saveResp(){
+                    this.inputs.form.responses={}
+                    for(element in this.inputs.form.inputs){
+                        
+                        const inputElement= document.getElementsByClassName("element")[element]
+                        let inputField=null;
+                        let value=null;
+                        if(this.inputs.form.inputs[element].inputType=='text'||this.inputs.form.inputs[element].inputType=='color'){
+                            inputField=inputElement.getElementsByClassName("textInput")[0]
+                            value=inputField.value;
+                        }else if(this.inputs.form.inputs[element].inputType=='textarea'){
+                            inputField=inputElement.getElementsByClassName("textArea")[0]
+                            value=inputField.value;
+                        }else{
+                            inputField= inputElement.getElementsByClassName("mcq")[0]
+                            for(i in inputField.children){
+                                // console.log("child"+inputField.children[i])
+                                if(!inputField.children[i].children){continue}
+                                if(inputField.children[i].children[0].checked){
+                                    value=inputField.children[i].children[0].value
+                                }else{
+                                    
+                                }
+                            }
+                        }
+                        
+                        //response required check
+                        if(value==""|| value==null){
+                            if(this.inputs.form.inputs[element].required){
+                                this.error=true
+                                setTimeout(()=>{
+                                    this.error=false
+                                },3000)
+                                return;
+                            }else{
+                                value="Not answered"
+                            }
+                            
+                        }
+                        
+                         value=value.replace(/\n/g, " ").replace(/\r/g, " ").replace(/\t/g, " ");
+                         this.inputs.form.responses[element]=value
+                    }
+                    axios.post("/form",{
+                        url:window.location.href,
+                        resp:this.inputs.form.responses
+                    })
+                    .then((response)=>{
+                        this.respSaved=true
+                    })
+                    .catch((err)=>{
+                        this.error=true
+                        this.errorMsg="Resopnse not Registered"
+                        setTimeout(()=>{
+                        this.error=false
+                        this.errorMsg="Fill all required fields"
+                        },3000)
+                        return;
+                    }
+                    )
+
+                }
+                
+            },
+
+        })
+    
+    </script>
+</body>
+</html>
