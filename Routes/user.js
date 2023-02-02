@@ -110,7 +110,7 @@ router.post("/CreateNewForm",auth, async(req,res)=>{
             console.log(user.forms.length)
             const index=user.forms.length-1
             const userId= jwt.sign(req.auth.id,"panni")
-            const url="https://myfrm.herokuapp.com/form/"+userId+"/"+index
+            const url="https://google-form-clone-making.onrender.com/form/"+userId+"/"+index
             res.send(url)
         })
 
