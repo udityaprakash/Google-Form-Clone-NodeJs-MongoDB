@@ -20,7 +20,6 @@ router.get("/CreateNewForm",auth, (req,res)=>{
 router.get("/form/:userId/:indexOfForm",async(req,res)=>{
    const userId= jwt.verify(req.params.userId,"panni")
    const user= await User.findById(userId)
-    
    if(user.name){
        const data=JSON.stringify({form:user.forms[req.params.indexOfForm]})
        res.render('form',{data:data})
